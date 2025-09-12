@@ -33,6 +33,7 @@
             btnAbrirImagem = new Button();
             btnLimpar = new Button();
             btnAplicarAlgoritmo = new Button();
+            openFileDialog = new OpenFileDialog();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             SuspendLayout();
@@ -84,6 +85,10 @@
             btnAplicarAlgoritmo.Text = "Aplicar algoritmo";
             btnAplicarAlgoritmo.UseVisualStyleBackColor = true;
             btnAplicarAlgoritmo.Click += btnAplicarAlgoritmo_Click;
+            // 
+            // openFileDialog
+            // 
+            openFileDialog.FileName = "openFileDialog";
             // 
             // MainForm
             // 
