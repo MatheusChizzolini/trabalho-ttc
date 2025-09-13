@@ -2,8 +2,8 @@ namespace TrabalhoTTC
 {
     public partial class MainForm : Form
     {
-        private Image image;
-        private Bitmap bitmap;
+        private Image imagemOrigem;
+        private Bitmap bitmapOrigem;
 
         public MainForm()
         {
@@ -15,8 +15,8 @@ namespace TrabalhoTTC
             openFileDialog.FileName = "";
             openFileDialog.Filter = "Arquivos de Imagem (*.jpg;*.bmp;*.png)|*.jpg;*.bmp;*.png";
             if (openFileDialog.ShowDialog() == DialogResult.OK) {
-                image = Image.FromFile(openFileDialog.FileName);
-                pictureBox1.Image = image;
+                imagemOrigem = Image.FromFile(openFileDialog.FileName);
+                pictureBox1.Image = imagemOrigem;
                 pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
                 pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
             }
@@ -30,7 +30,10 @@ namespace TrabalhoTTC
 
         private void btnAplicarAlgoritmo_Click(object sender, EventArgs e)
         {
-
+            Bitmap bitmapDestino = new Bitmap(imagemOrigem);
+            bitmapOrigem = (Bitmap) imagemOrigem;
+            Algoritmos.AfinamentoZhangSuen(bitmapOrigem, bitmapDestino);
+            pictureBox2.Image = bitmapDestino;
         }
     }
 }
