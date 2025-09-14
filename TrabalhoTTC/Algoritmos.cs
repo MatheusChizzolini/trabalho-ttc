@@ -9,7 +9,8 @@ namespace TrabalhoTTC
 {
     class Algoritmos
     {
-        public static void AfinamentoZhangSuen(Bitmap bitmapOrigem, Bitmap bitmapDestino)
+        // Esta função percorre a imagem e povoa a matriz binária, que representa os pretos e brancos da imagem orignal
+        public static byte[,] GerarMatrizBinaria(Bitmap bitmapOrigem)
         {
             int altura = bitmapOrigem.Height;
             int largura = bitmapOrigem.Width;
@@ -17,19 +18,16 @@ namespace TrabalhoTTC
             byte[,] matrizBinaria = new byte[altura, largura];
 
             BitmapData bitmapDataOrigem = bitmapOrigem.LockBits(
-                new Rectangle(0, 0, largura, altura), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb    
-            );
-
-            BitmapData bitmapDataDestino = bitmapDestino.LockBits(
-                new Rectangle(0, 0, largura, altura), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb    
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format24bppRgb
             );
 
             int padding = bitmapDataOrigem.Stride - (largura * tamanhoPixel);
 
             unsafe
             {
-                // Esta parte percorre a imagem e povoa a matriz binária, que representa os pretos e brancos da imagem orignal
-                byte* origem = (byte *) bitmapDataOrigem.Scan0.ToPointer();
+                byte *origem = (byte *)bitmapDataOrigem.Scan0.ToPointer();
                 for (int linha = 0; linha < altura; linha++)
                 {
                     for (int coluna = 0; coluna < largura; coluna++)
@@ -48,12 +46,74 @@ namespace TrabalhoTTC
 
                     origem += padding;
                 }
+            }
 
+            bitmapOrigem.UnlockBits(bitmapDataOrigem);
+            return matrizBinaria;
+        }
+
+        // Esta função transforma de volta a matriz binária em bitmap
+        public static void TransformarMatrizEmBitmap(byte[,] matrizBinaria, Bitmap bitmapDestino)
+        {
+            int altura = matrizBinaria.GetLength(0);
+            int largura = matrizBinaria.GetLength(1);
+            int tamanhoPixel = 3;
+
+            BitmapData bitmapDataDestino = bitmapDestino.LockBits(
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadWrite,
+                PixelFormat.Format24bppRgb
+            );
+
+            int padding = bitmapDataDestino.Stride - (largura * tamanhoPixel);
+
+            unsafe
+            {
+                byte *destino = (byte *)bitmapDataDestino.Scan0.ToPointer();
+                for (int linha = 0; linha < altura; linha++)
+                {
+                    for (int coluna = 0; coluna < largura; coluna++)
+                    {
+                        if (matrizBinaria[linha, coluna] == 1)
+                        {
+                            *(destino)++ = 0;
+                            *(destino)++ = 0;
+                            *(destino)++ = 0;
+                        }
+                        else
+                        {
+                            *(destino)++ = 255;
+                            *(destino)++ = 255;
+                            *(destino)++ = 255;
+                        }
+                    }
+
+                    destino += padding;
+                }
+            }
+
+            bitmapDestino.UnlockBits(bitmapDataDestino);
+        }
+
+        public static void AfinamentoZhangSuen(Bitmap bitmapOrigem, Bitmap bitmapDestino)
+        {
+            int altura = bitmapOrigem.Height;
+            int largura = bitmapOrigem.Width;
+            byte[,] matrizBinaria = GerarMatrizBinaria(bitmapOrigem);
+
+            BitmapData bitmapDataOrigem = bitmapOrigem.LockBits(
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format24bppRgb    
+            );
+
+            unsafe
+            {
                 bool afinamento = true;
                 while (afinamento)
                 {
                     afinamento = false;
-                    List<Point> marcados = new List<Point>();
+                    List<Point> marcados = [];
                     // Primeira sub-iteração
                     for (int linha = 1; linha < altura - 1; linha++)
                     {
@@ -194,32 +254,46 @@ namespace TrabalhoTTC
                     }
                 }
 
-                // Transformar de volta a matriz em bitmap
-                byte* destino = (byte *) bitmapDataDestino.Scan0.ToPointer();
+                TransformarMatrizEmBitmap(matrizBinaria, bitmapDestino);
+            }
+
+            bitmapOrigem.UnlockBits(bitmapDataOrigem);
+        }
+
+        public static void Ceguinho(Bitmap bitmapOrigem, Bitmap bitmapDestino)
+        {
+            int altura = bitmapOrigem.Height;
+            int largura = bitmapOrigem.Width;
+            int tamanhoPixel = 3;
+            byte[,] matrizBinaria = GerarMatrizBinaria(bitmapOrigem);
+
+            BitmapData bitmapDataOrigem = bitmapOrigem.LockBits(
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format24bppRgb
+            );
+
+            BitmapData bitmapDataDestino = bitmapDestino.LockBits(
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadWrite,
+                PixelFormat.Format24bppRgb
+            );
+
+            int padding = bitmapDataOrigem.Stride - (largura * tamanhoPixel);
+
+            unsafe
+            {
                 for (int linha = 0; linha < altura; linha++)
                 {
                     for (int coluna = 0; coluna < largura; coluna++)
                     {
-                        if (matrizBinaria[linha, coluna] == 1)
+                        if (matrizBinaria[linha, coluna + 1] == 1)
                         {
-                            *(destino)++ = 0;
-                            *(destino)++ = 0;
-                            *(destino)++ = 0;
-                        }
-                        else
-                        {
-                            *(destino)++ = 255;
-                            *(destino)++ = 255;
-                            *(destino)++ = 255;
+
                         }
                     }
-
-                    destino += padding;
                 }
             }
-
-            bitmapOrigem.UnlockBits(bitmapDataOrigem);
-            bitmapDestino.UnlockBits(bitmapDataDestino);
         }
     }
 }
