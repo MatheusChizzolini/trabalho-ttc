@@ -31,9 +31,11 @@ namespace TrabalhoTTC
         private void btnAplicarAlgoritmo_Click(object sender, EventArgs e)
         {
             Bitmap bitmapDestino = new Bitmap(imagemOrigem);
+            Bitmap bitmapDestino2 = new Bitmap(imagemOrigem);
             bitmapOrigem = (Bitmap) imagemOrigem;
             Algoritmos.AfinamentoZhangSuen(bitmapOrigem, bitmapDestino);
-            pictureBox2.Image = bitmapDestino;
+            Algoritmos.Ceguinho(bitmapDestino, bitmapDestino2);
+            pictureBox2.Image = bitmapDestino2;
         }
     }
 }
