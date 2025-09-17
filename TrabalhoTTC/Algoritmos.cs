@@ -95,38 +95,6 @@ namespace TrabalhoTTC
             bitmapDestino.UnlockBits(bitmapDataDestino);
         }
 
-        public static byte[] PegarVizinhosCeguinho(byte[,] matrizBinaria, Point pixelAtual)
-        {
-            byte[] vizinhos = [
-                matrizBinaria[pixelAtual.Y, pixelAtual.X + 1],
-                matrizBinaria[pixelAtual.Y - 1, pixelAtual.X + 1],
-                matrizBinaria[pixelAtual.Y - 1, pixelAtual.X],
-                matrizBinaria[pixelAtual.Y - 1, pixelAtual.X - 1],
-                matrizBinaria[pixelAtual.Y, pixelAtual.X - 1],
-                matrizBinaria[pixelAtual.Y + 1, pixelAtual.X - 1],
-                matrizBinaria[pixelAtual.Y + 1, pixelAtual.X],
-                matrizBinaria[pixelAtual.Y + 1, pixelAtual.X + 1],
-            ];
-
-            return vizinhos;
-        }
-
-        public static Point GerarNovaCoordenada(Point pixelAtual, int indice)
-        {
-            switch (indice)
-            {
-                case 0: return new Point(pixelAtual.X + 1, pixelAtual.Y);
-                case 1: return new Point(pixelAtual.X + 1, pixelAtual.Y - 1);
-                case 2: return new Point(pixelAtual.X, pixelAtual.Y - 1);
-                case 3: return new Point(pixelAtual.X - 1, pixelAtual.Y - 1);
-                case 4: return new Point(pixelAtual.X - 1, pixelAtual.Y);
-                case 5: return new Point(pixelAtual.X - 1, pixelAtual.Y + 1);
-                case 6: return new Point(pixelAtual.X, pixelAtual.Y + 1);
-                case 7: return new Point(pixelAtual.X + 1, pixelAtual.Y + 1);
-                default: return new Point(pixelAtual.X, pixelAtual.Y);
-            }
-        }
-
         public static void AfinamentoZhangSuen(Bitmap bitmapOrigem, Bitmap bitmapDestino)
         {
             int altura = bitmapOrigem.Height;
@@ -153,17 +121,15 @@ namespace TrabalhoTTC
                         {
                             if (matrizBinaria[linha, coluna] == 1)
                             {
-                                byte[] vizinhos =
-                                [
-                                    matrizBinaria[linha - 1, coluna],
-                                    matrizBinaria[linha - 1, coluna + 1],
-                                    matrizBinaria[linha, coluna + 1],
-                                    matrizBinaria[linha + 1, coluna + 1],
-                                    matrizBinaria[linha + 1, coluna],
-                                    matrizBinaria[linha + 1, coluna - 1],
-                                    matrizBinaria[linha, coluna - 1],
-                                    matrizBinaria[linha - 1, coluna - 1],
-                                ];
+                                byte[] vizinhos = new byte[8];
+                                vizinhos[0] = matrizBinaria[linha - 1, coluna];
+                                vizinhos[1] = matrizBinaria[linha - 1, coluna + 1];
+                                vizinhos[2] = matrizBinaria[linha, coluna + 1];
+                                vizinhos[3] = matrizBinaria[linha + 1, coluna + 1];
+                                vizinhos[4] = matrizBinaria[linha + 1, coluna];
+                                vizinhos[5] = matrizBinaria[linha + 1, coluna - 1];
+                                vizinhos[6] = matrizBinaria[linha, coluna - 1];
+                                vizinhos[7] = matrizBinaria[linha - 1, coluna - 1];
 
                                 // Primeira regra
                                 int transicao = 0;
@@ -225,17 +191,15 @@ namespace TrabalhoTTC
                         {
                             if (matrizBinaria[linha, coluna] == 1)
                             {
-                                byte[] vizinhos =
-                                [
-                                    matrizBinaria[linha - 1, coluna],
-                                    matrizBinaria[linha - 1, coluna + 1],
-                                    matrizBinaria[linha, coluna + 1],
-                                    matrizBinaria[linha + 1, coluna + 1],
-                                    matrizBinaria[linha + 1, coluna],
-                                    matrizBinaria[linha + 1, coluna - 1],
-                                    matrizBinaria[linha, coluna - 1],
-                                    matrizBinaria[linha - 1, coluna - 1],
-                                ];
+                                byte[] vizinhos = new byte[8];
+                                vizinhos[0] = matrizBinaria[linha - 1, coluna];
+                                vizinhos[1] = matrizBinaria[linha - 1, coluna + 1];
+                                vizinhos[2] = matrizBinaria[linha, coluna + 1];
+                                vizinhos[3] = matrizBinaria[linha + 1, coluna + 1];
+                                vizinhos[4] = matrizBinaria[linha + 1, coluna];
+                                vizinhos[5] = matrizBinaria[linha + 1, coluna - 1];
+                                vizinhos[6] = matrizBinaria[linha, coluna - 1];
+                                vizinhos[7] = matrizBinaria[linha - 1, coluna - 1];
 
                                 int transicao = 0;
                                 for (int i = 0; i < vizinhos.Length - 1; i++)
@@ -298,61 +262,61 @@ namespace TrabalhoTTC
             int largura = bitmapOrigem.Width;
             byte[,] matrizBinaria = GerarMatrizBinaria(bitmapOrigem);
             byte[,] matrizContorno = new byte[altura, largura];
-            for (int linha = 1;  linha < altura - 1; linha++)
+
+            for (int linha = 1; linha < altura - 1; linha++)
             {
-                for (int coluna = 1; coluna < largura - 2; coluna++)
+                for (int coluna = 1; coluna < largura - 1; coluna++)
                 {
-                    if (matrizBinaria[linha, coluna] == 0 && matrizBinaria[linha, coluna + 1] == 1)
+                    if (matrizBinaria[linha, coluna] == 0 && matrizBinaria[linha, coluna + 1] == 1 && matrizContorno[linha, coluna] == 0)
                     {
-                        List<Point> contorno = new List<Point>();
-                        Point pixelAtual = new Point(coluna, linha);
-                        contorno.Add(pixelAtual);
-                        byte[] vizinhos = PegarVizinhosCeguinho(matrizBinaria, pixelAtual);
-                        int indiceVizinhoAnterior = 4;
-                        bool isInicio = false;
-
-                        int passos = 0;
-                        int maxPassos = altura * largura * 4;
-
-                        while (!isInicio && passos < maxPassos)
+                        matrizContorno[linha, coluna] = 1;
+                        Point inicio = new Point(coluna, linha);
+                        Point atual = inicio;
+                        int direcao = 4;
+                        bool voltou = false;
+                        while (!voltou)
                         {
-                            passos++;
-                            int indiceObjeto = -1;
-                            bool flag = false;
-                            for (int i = 0; i < vizinhos.Length; i++)
+                            if (atual.Y < 0 || atual.Y >= altura || atual.X < 0 || atual.X >= largura)
                             {
-                                int indice = (indiceVizinhoAnterior + 1 + i) % 8;
-                                if (vizinhos[indice] == 1 && !flag)
-                                {
-                                    indiceObjeto = indice;
-                                    flag = true;
-                                }
-                            }
-
-                            if (indiceObjeto != -1)
-                            {
-                                int indiceFundo = (indiceObjeto + 7) % 8;
-                                Point proximoFundo = GerarNovaCoordenada(pixelAtual, indiceFundo);
-                                contorno.Add(proximoFundo);
-                                pixelAtual = proximoFundo;
-                                indiceVizinhoAnterior = indiceFundo;
-                                vizinhos = PegarVizinhosCeguinho(matrizBinaria, pixelAtual);
-                                if (pixelAtual == contorno[0])
-                                {
-                                    isInicio = true;
-                                }
+                                voltou = true;
                             }
                             else
                             {
-                                isInicio = true;
-                            }
-                        }
-                        
-                        foreach (Point p in contorno)
-                        {
-                            if (p.Y >= 0 && p.Y < altura && p.X >= 0 && p.X < largura)
-                            {
-                                matrizContorno[p.Y, p.X] = 1;
+                                Point[] vizinhos = new Point[8];
+                                vizinhos[0] = new Point(atual.X + 1, atual.Y);
+                                vizinhos[1] = new Point(atual.X + 1, atual.Y - 1);
+                                vizinhos[2] = new Point(atual.X, atual.Y - 1);
+                                vizinhos[3] = new Point(atual.X - 1, atual.Y - 1);
+                                vizinhos[4] = new Point(atual.X - 1, atual.Y);
+                                vizinhos[5] = new Point(atual.X - 1, atual.Y + 1);
+                                vizinhos[6] = new Point(atual.X, atual.Y + 1);
+                                vizinhos[7] = new Point(atual.X + 1, atual.Y + 1);
+
+                                bool encontrou = false;
+                                for (int i = 0; i < 8 && !encontrou; i++)
+                                {
+                                    int indice = (direcao + 1 + i) % 8;
+                                    Point p = vizinhos[indice];
+                                    if (p.Y >= 0 && p.Y < altura && p.X >= 0 && p.X < largura)
+                                    {
+                                        if (matrizBinaria[p.Y, p.X] == 1)
+                                        {
+                                            matrizContorno[atual.Y, atual.X] = 1;
+                                            atual = vizinhos[(indice + 7) % 8];
+                                            direcao = (indice + 6) % 8;
+                                            encontrou = true;
+                                        }
+                                    }
+                                }
+
+                                if (atual == inicio)
+                                {
+                                    voltou = true;
+                                }
+                                else if (!encontrou)
+                                {
+                                    voltou = true;
+                                }
                             }
                         }
                     }
