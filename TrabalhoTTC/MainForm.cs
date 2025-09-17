@@ -1,3 +1,5 @@
+using System.Drawing.Imaging;
+
 namespace TrabalhoTTC
 {
     public partial class MainForm : Form
@@ -36,6 +38,7 @@ namespace TrabalhoTTC
             Algoritmos.AfinamentoZhangSuen(bitmapOrigem, bitmapDestino);
             Algoritmos.Ceguinho(bitmapDestino, bitmapDestino2);
             pictureBox2.Image = bitmapDestino2;
+            bitmapDestino2.Save("C:\\resultado.png", ImageFormat.Png);
         }
     }
 }

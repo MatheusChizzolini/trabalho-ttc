@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Drawing.Imaging;
 
 namespace TrabalhoTTC
 {
@@ -27,7 +22,7 @@ namespace TrabalhoTTC
 
             unsafe
             {
-                byte *origem = (byte *)bitmapDataOrigem.Scan0.ToPointer();
+                byte* origem = (byte*)bitmapDataOrigem.Scan0.ToPointer();
                 for (int linha = 0; linha < altura; linha++)
                 {
                     for (int coluna = 0; coluna < largura; coluna++)
@@ -69,7 +64,7 @@ namespace TrabalhoTTC
 
             unsafe
             {
-                byte *destino = (byte *)bitmapDataDestino.Scan0.ToPointer();
+                byte* destino = (byte*)bitmapDataDestino.Scan0.ToPointer();
                 for (int linha = 0; linha < altura; linha++)
                 {
                     for (int coluna = 0; coluna < largura; coluna++)
@@ -104,7 +99,7 @@ namespace TrabalhoTTC
             BitmapData bitmapDataOrigem = bitmapOrigem.LockBits(
                 new Rectangle(0, 0, largura, altura),
                 ImageLockMode.ReadOnly,
-                PixelFormat.Format24bppRgb    
+                PixelFormat.Format24bppRgb
             );
 
             unsafe
@@ -299,11 +294,36 @@ namespace TrabalhoTTC
                                     Point p = vizinhos[indice];
                                     if (p.Y >= 0 && p.Y < altura && p.X >= 0 && p.X < largura)
                                     {
-                                        if (matrizBinaria[p.Y, p.X] == 1)
+                                        if (matrizBinaria[p.Y, p.X] == 1) // Achou a parede
                                         {
-                                            matrizContorno[atual.Y, atual.X] = 1;
-                                            atual = vizinhos[(indice + 7) % 8];
-                                            direcao = (indice + 6) % 8;
+                                            // Calcula qual será o próximo ponto
+                                            Point proximoPonto = vizinhos[(indice + 7) % 8];
+
+                                            // Verifica se esse próximo ponto está dentro da imagem
+                                            if (proximoPonto.Y >= 0 && proximoPonto.Y < altura && proximoPonto.X >= 0 && proximoPonto.X < largura)
+                                            {
+                                                // VERIFICAÇÃO ANTI-LOOP INFINITO:
+                                                // Checa se o próximo ponto JÁ FOI VISITADO (== 1) E se ele NÃO É o ponto de início.
+                                                if (matrizContorno[proximoPonto.Y, proximoPonto.X] == 1 && proximoPonto != inicio)
+                                                {
+                                                    // É um loop. Aborte o traçado.
+                                                    voltou = true;
+                                                }
+                                                else
+                                                {
+                                                    // Ponto seguro. Pode continuar.
+                                                    matrizContorno[atual.Y, atual.X] = 1;
+                                                    atual = proximoPonto;
+                                                    // System.Diagnostics.Debug.WriteLine(atual); // Pode apagar/comentar
+                                                    direcao = (indice + 6) % 8;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                // O próximo ponto estaria FORA da imagem. Aborte.
+                                                voltou = true;
+                                            }
+
                                             encontrou = true;
                                         }
                                     }
