@@ -34,11 +34,15 @@ namespace TrabalhoTTC
         {
             Bitmap bitmapDestino = new Bitmap(imagemOrigem);
             Bitmap bitmapDestino2 = new Bitmap(imagemOrigem);
+            List<List<Point>> contornos = new List<List<Point>>();
             bitmapOrigem = (Bitmap) imagemOrigem;
             Algoritmos.AfinamentoZhangSuen(bitmapOrigem, bitmapDestino);
-            Algoritmos.Ceguinho(bitmapDestino, bitmapDestino2);
+            //bitmapDestino.Save("C:\\Users\\Matheus\\Faculdade\\6Termo\\TTC\\zhangsuen.png", ImageFormat.Png);
+            contornos = Algoritmos.Ceguinho(bitmapDestino, bitmapDestino2);
+            //bitmapDestino2.Save("C:\\Users\\Matheus\\Faculdade\\6Termo\\TTC\\ceguinho.png", ImageFormat.Png);
+            Algoritmos.RetanguloMinimo(contornos, bitmapDestino2);
             pictureBox2.Image = bitmapDestino2;
-            bitmapDestino2.Save("C:\\resultado.png", ImageFormat.Png);
+            //bitmapDestino2.Save("C:\\Users\\Matheus\\Faculdade\\6Termo\\TTC\\final.png", ImageFormat.Png);
         }
     }
 }

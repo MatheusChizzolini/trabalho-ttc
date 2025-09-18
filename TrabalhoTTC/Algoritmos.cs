@@ -251,12 +251,13 @@ namespace TrabalhoTTC
             bitmapOrigem.UnlockBits(bitmapDataOrigem);
         }
 
-        public static void Ceguinho(Bitmap bitmapOrigem, Bitmap bitmapDestino)
+        public static List<List<Point>> Ceguinho(Bitmap bitmapOrigem, Bitmap bitmapDestino)
         {
             int altura = bitmapOrigem.Height;
             int largura = bitmapOrigem.Width;
             byte[,] matrizBinaria = GerarMatrizBinaria(bitmapOrigem);
             byte[,] matrizContorno = new byte[altura, largura];
+            List<List<Point>> contornos = new List<List<Point>>();
 
             for (int linha = 1; linha < altura - 1; linha++)
             {
@@ -266,6 +267,8 @@ namespace TrabalhoTTC
                     {
                         matrizContorno[linha, coluna] = 1;
                         Point inicio = new Point(coluna, linha);
+                        List<Point> contornoAtual = new List<Point>();
+                        contornoAtual.Add(inicio);
                         Point atual = inicio;
                         int direcao = 4;
                         bool voltou = false;
@@ -294,34 +297,22 @@ namespace TrabalhoTTC
                                     Point p = vizinhos[indice];
                                     if (p.Y >= 0 && p.Y < altura && p.X >= 0 && p.X < largura)
                                     {
-                                        if (matrizBinaria[p.Y, p.X] == 1) // Achou a parede
+                                        if (matrizBinaria[p.Y, p.X] == 1)
                                         {
-                                            // Calcula qual será o próximo ponto
                                             Point proximoPonto = vizinhos[(indice + 7) % 8];
-
-                                            // Verifica se esse próximo ponto está dentro da imagem
                                             if (proximoPonto.Y >= 0 && proximoPonto.Y < altura && proximoPonto.X >= 0 && proximoPonto.X < largura)
                                             {
-                                                // VERIFICAÇÃO ANTI-LOOP INFINITO:
-                                                // Checa se o próximo ponto JÁ FOI VISITADO (== 1) E se ele NÃO É o ponto de início.
                                                 if (matrizContorno[proximoPonto.Y, proximoPonto.X] == 1 && proximoPonto != inicio)
                                                 {
-                                                    // É um loop. Aborte o traçado.
                                                     voltou = true;
                                                 }
                                                 else
                                                 {
-                                                    // Ponto seguro. Pode continuar.
                                                     matrizContorno[atual.Y, atual.X] = 1;
                                                     atual = proximoPonto;
-                                                    // System.Diagnostics.Debug.WriteLine(atual); // Pode apagar/comentar
+                                                    contornoAtual.Add(atual);
                                                     direcao = (indice + 6) % 8;
                                                 }
-                                            }
-                                            else
-                                            {
-                                                // O próximo ponto estaria FORA da imagem. Aborte.
-                                                voltou = true;
                                             }
 
                                             encontrou = true;
@@ -339,11 +330,114 @@ namespace TrabalhoTTC
                                 }
                             }
                         }
+
+                        contornos.Add(contornoAtual);
                     }
                 }
             }
 
             TransformarMatrizEmBitmap(matrizContorno, bitmapDestino);
+            return contornos;
+        }
+
+        public static void RetanguloMinimo(List<List<Point>> contornos, Bitmap bitmapDestino)
+        {
+            int altura = bitmapDestino.Height;
+            int largura = bitmapDestino.Width;
+            int tamanhoPixel = 3;
+
+            BitmapData bitmapDataDestino = bitmapDestino.LockBits(
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadWrite,
+                PixelFormat.Format24bppRgb
+            );
+
+            int stride = bitmapDataDestino.Stride;
+
+            unsafe
+            {
+                byte *destino = (byte *) bitmapDataDestino.Scan0.ToPointer();
+                foreach (List<Point> contorno in contornos)
+                {
+                    if (contorno.Count != 0)
+                    {
+                        int minX = contorno[0].X;
+                        int maxX = contorno[0].X;
+                        int minY = contorno[0].Y;
+                        int maxY = contorno[0].Y;
+
+                        foreach (Point p in contorno)
+                        {
+                            if (p.X < minX)
+                            {
+                                minX = p.X;
+                            }
+
+                            if (p.X > maxX)
+                            {
+                                maxX = p.X;
+                            }
+
+                            if (p.Y < minY)
+                            {
+                                minY = p.Y;
+                            }
+
+                            if (p.Y > maxY)
+                            {
+                                maxY = p.Y;
+                            }
+                        }
+
+                        byte *aux;
+                        for (int x = minX; x <= maxX; x++)
+                        {
+                            if (x >= 0 && x < largura && minY >= 0 && minY < altura)
+                            {
+                                aux = destino + (minY * stride) + (x * tamanhoPixel);
+                                *(aux)++ = 0;
+                                *(aux)++ = 0;
+                                *(aux)++ = 255;
+                            }
+                        }
+
+                        for (int x = minX; x <= maxX; x++)
+                        {
+                            if (x >= 0 && x < largura && maxY >= 0 && maxY < altura)
+                            {
+                                aux = destino + (maxY * stride) + (x * tamanhoPixel);
+                                *(aux)++ = 0;
+                                *(aux)++ = 0;
+                                *(aux)++ = 255;
+                            }
+                        }
+
+                        for (int y = minY; y <= maxY; y++)
+                        {
+                            if (minX >= 0 && minX < largura && y >= 0 && y < altura)
+                            {
+                                aux = destino + (y * stride) + (minX * tamanhoPixel);
+                                *(aux)++ = 0;
+                                *(aux)++ = 0;
+                                *(aux)++ = 255;
+                            }
+                        }
+
+                        for (int y = minY; y <= maxY; y++)
+                        {
+                            if (maxX >= 0 && maxX < largura && y >= 0 && y < altura)
+                            {
+                                aux = destino + (y * stride) + (maxX * tamanhoPixel);
+                                *(aux)++ = 0;
+                                *(aux)++ = 0;
+                                *(aux)++ = 255;
+                            }
+                        }
+                    }
+                }
+            }
+
+            bitmapDestino.UnlockBits(bitmapDataDestino);
         }
     }
 }
