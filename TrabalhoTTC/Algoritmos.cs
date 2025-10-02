@@ -255,88 +255,126 @@ namespace TrabalhoTTC
         {
             int altura = bitmapOrigem.Height;
             int largura = bitmapOrigem.Width;
-            byte[,] matrizBinaria = GerarMatrizBinaria(bitmapOrigem);
+            int tamanhoPixel = 3;
             byte[,] matrizContorno = new byte[altura, largura];
             List<List<Point>> contornos = new List<List<Point>>();
 
-            for (int linha = 1; linha < altura - 1; linha++)
+            BitmapData bitmapDataOrigem = bitmapOrigem.LockBits(
+                new Rectangle(0, 0, largura, altura),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format24bppRgb
+            );
+
+            int stride = bitmapDataOrigem.Stride;
+
+            unsafe
             {
-                for (int coluna = 1; coluna < largura - 1; coluna++)
+                byte*[] OitoVizinhos(byte* atual)
                 {
-                    if (matrizBinaria[linha, coluna] == 0 && matrizBinaria[linha, coluna + 1] == 1 && matrizContorno[linha, coluna] == 0)
+                    byte*[] vizinhos = new byte*[8];
+
+                    vizinhos[0] = atual + tamanhoPixel;
+                    vizinhos[1] = atual - stride + tamanhoPixel;
+                    vizinhos[2] = atual - stride;
+                    vizinhos[3] = atual - stride - tamanhoPixel;
+                    vizinhos[4] = atual - tamanhoPixel;
+                    vizinhos[5] = atual + stride - tamanhoPixel;
+                    vizinhos[6] = atual + stride;
+                    vizinhos[7] = atual + stride + tamanhoPixel;
+
+                    return vizinhos;
+                }
+
+                byte*[] QuatroVizinhos(byte* atual)
+                {
+                    byte*[] vizinhos = new byte*[4];
+
+                    vizinhos[0] = atual + tamanhoPixel;
+                    vizinhos[1] = atual - stride;
+                    vizinhos[2] = atual - tamanhoPixel;
+                    vizinhos[3] = atual + stride;
+
+                    return vizinhos;
+                }
+
+                byte* origem = (byte*) bitmapDataOrigem.Scan0.ToPointer();
+                // Binariza a imagem
+                for (int y = 0; y < altura; y++)
+                {
+                    for (int x = 0; x < largura; x++)
                     {
-                        matrizContorno[linha, coluna] = 1;
-                        Point inicio = new Point(coluna, linha);
-                        List<Point> contornoAtual = new List<Point>();
-                        contornoAtual.Add(inicio);
-                        Point atual = inicio;
-                        int direcao = 4;
-                        bool voltou = false;
-                        while (!voltou)
+                        byte* aux = origem + y * stride + x * tamanhoPixel;
+                        if ((aux[0] + aux[1] + aux[2]) / 3 > 127)
                         {
-                            if (atual.Y < 0 || atual.Y >= altura || atual.X < 0 || atual.X >= largura)
-                            {
-                                voltou = true;
-                            }
-                            else
-                            {
-                                Point[] vizinhos = new Point[8];
-                                vizinhos[0] = new Point(atual.X + 1, atual.Y);
-                                vizinhos[1] = new Point(atual.X + 1, atual.Y - 1);
-                                vizinhos[2] = new Point(atual.X, atual.Y - 1);
-                                vizinhos[3] = new Point(atual.X - 1, atual.Y - 1);
-                                vizinhos[4] = new Point(atual.X - 1, atual.Y);
-                                vizinhos[5] = new Point(atual.X - 1, atual.Y + 1);
-                                vizinhos[6] = new Point(atual.X, atual.Y + 1);
-                                vizinhos[7] = new Point(atual.X + 1, atual.Y + 1);
+                            aux[0] = 255;
+                            aux[1] = 255;
+                            aux[2] = 255;
+                        }
+                        else
+                        {
+                            aux[0] = 0;
+                            aux[1] = 0;
+                            aux[2] = 0;
+                        }
+                    }
+                }
 
-                                bool encontrou = false;
-                                for (int i = 0; i < 8 && !encontrou; i++)
+                for (int y = 1; y < altura - 1; y++)
+                {
+                    for (int x = 1; x < largura - 1; x++)
+                    {
+                        byte* atual = origem + y * stride + x * tamanhoPixel;
+                        if (*atual == 255 && *(atual + tamanhoPixel) == 0 && matrizContorno[y, x] == 0)
+                        {
+                            List<Point> contornoAtual = new List<Point>();
+                            Stack<IntPtr> pilha = new Stack<IntPtr>();
+                            matrizContorno[y, x] = 1;
+                            contornoAtual.Add(new Point(x, y));
+                            byte*[] oitoVizinhos = OitoVizinhos(atual);
+                            for (int i = 0; i < 8; i++)
+                            {
+                                if (*oitoVizinhos[i] == 255)
                                 {
-                                    int indice = (direcao + 1 + i) % 8;
-                                    Point p = vizinhos[indice];
-                                    if (p.Y >= 0 && p.Y < altura && p.X >= 0 && p.X < largura)
+                                    byte*[] quatroVizinhos = QuatroVizinhos(oitoVizinhos[i]);
+                                    if (*quatroVizinhos[0] == 0 || *quatroVizinhos[1] == 0 || *quatroVizinhos[2] == 0 || *quatroVizinhos[3] == 0)
                                     {
-                                        if (matrizBinaria[p.Y, p.X] == 1)
-                                        {
-                                            Point proximoPonto = vizinhos[(indice + 7) % 8];
-                                            if (proximoPonto.Y >= 0 && proximoPonto.Y < altura && proximoPonto.X >= 0 && proximoPonto.X < largura)
-                                            {
-                                                if (matrizContorno[proximoPonto.Y, proximoPonto.X] == 1 && proximoPonto != inicio)
-                                                {
-                                                    voltou = true;
-                                                }
-                                                else
-                                                {
-                                                    matrizContorno[atual.Y, atual.X] = 1;
-                                                    atual = proximoPonto;
-                                                    contornoAtual.Add(atual);
-                                                    direcao = (indice + 6) % 8;
-                                                }
-                                            }
+                                        pilha.Push((IntPtr) oitoVizinhos[i]);
+                                    }
+                                }
+                            }
 
-                                            encontrou = true;
+                            while (pilha.Count > 0)
+                            {
+                                byte* p = (byte*) pilha.Pop();
+                                oitoVizinhos = OitoVizinhos(p);
+                                long offset = p - origem;
+                                int yp = (int) (offset / stride);
+                                int xp = (int) ((offset % stride) / tamanhoPixel);
+                                for (int i = 0; i < 8; i++)
+                                {
+                                    if (*oitoVizinhos[i] == 255 && matrizContorno[yp, xp] == 0)
+                                    {
+                                        byte*[] quatroVizinhos = QuatroVizinhos(oitoVizinhos[i]);
+                                        if (*quatroVizinhos[0] == 0 || *quatroVizinhos[1] == 0 || *quatroVizinhos[2] == 0 || *quatroVizinhos[3] == 0)
+                                        {
+                                            pilha.Push((IntPtr) oitoVizinhos[i]);
                                         }
                                     }
                                 }
 
-                                if (atual == inicio)
-                                {
-                                    voltou = true;
-                                }
-                                else if (!encontrou)
-                                {
-                                    voltou = true;
-                                }
+                                matrizContorno[yp, xp] = 1;
+                                contornoAtual.Add(new Point(xp, yp));
                             }
-                        }
 
-                        contornos.Add(contornoAtual);
+                            contornos.Add(contornoAtual);
+                        }
                     }
                 }
+
+                TransformarMatrizEmBitmap(matrizContorno, bitmapDestino);
             }
 
-            TransformarMatrizEmBitmap(matrizContorno, bitmapDestino);
+            bitmapOrigem.UnlockBits(bitmapDataOrigem);
             return contornos;
         }
 
